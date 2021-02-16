@@ -144,10 +144,13 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
         # do not need to be optimized as they correspond to a circular cross-section.
         if overridden_values is not None:
             for key in overridden_values:
-                num_values = np.array(overridden_values[key]).size
-                key_size = wt_opt[key].size
-                idx_start = key_size - num_values
-                wt_opt[key][idx_start:] = overridden_values[key]
+                if isinstance(overridden_values[key], float):
+                    wt_opt[key] = overridden_values[key]
+                else:
+                    num_values = np.array(overridden_values[key]).size
+                    key_size = wt_opt[key].size
+                    idx_start = key_size - num_values
+                    wt_opt[key][idx_start:] = overridden_values[key]
 
         # Place the last design variables from a previous run into the problem.
         # This needs to occur after the above setup() and yaml2openmdao() calls
@@ -170,7 +173,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
             wt_opt.run_driver()
         else:
             wt_opt.run_model()
-
+            
         if (not MPI) or (MPI and rank == 0):
             # Save data coming from openmdao to an output yaml file
             froot_out = os.path.join(folder_output, opt_options['general']['fname_output'])
