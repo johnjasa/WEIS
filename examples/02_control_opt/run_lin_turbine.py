@@ -25,10 +25,10 @@ PLOT = False
 
 if __name__ == '__main__':
 
-    weis_dir = os.path.dirname(os.path.dirname(os.path.dirname( __file__)))
+    weis_dir                 = os.path.dirname( os.path.dirname (os.path.dirname(os.path.realpath(__file__)) ) )
     
     # 0. Load linear models from gen_linear_model() in WEIS/wies/aeroelasticse/LinearFAST.py
-    lin_fast.gen_linear_model([16])
+    # lin_fast.gen_linear_model([16])
 
 
     # 1. Set up linear turbine model by running mbc transformation
@@ -36,6 +36,7 @@ if __name__ == '__main__':
         # Load system from OpenFAST .lin files
         lin_file_dir = os.path.join(weis_dir,'outputs/iea_semi_lin')
         linTurb = lin_mod.LinearTurbineModel(lin_file_dir,reduceStates=False)
+        print(linTurb.A_ops)
     
     else:  
         # Load system from .mat file

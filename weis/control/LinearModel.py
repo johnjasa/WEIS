@@ -30,7 +30,6 @@ class LinearTurbineModel(object):
             out_prefix = 'lin'
             out_suffix = '.outb'
             out_files    = glob.glob(os.path.join(lin_file,out_prefix+'*'+out_suffix))
-
             n_lin_cases     = len(out_files)
 
             if not n_lin_cases:

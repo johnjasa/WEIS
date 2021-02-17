@@ -21,8 +21,8 @@ from ROSCO_toolbox import utilities as ROSCO_utilites
 from weis.aeroelasticse.Util import FileTools
 
 # Batch Analysis
-# from pCrunch import pdTools
-# from pCrunch import Processing, Analysis
+from pCrunch import pdTools
+from pCrunch import Processing, Analysis
 
 
 import numpy as np
@@ -161,7 +161,7 @@ class LinearFAST(runFAST_pywrapper_batch):
 
 
         # Initialize processing classes
-        # fp = Processing.FAST_Processing()
+        fp = Processing.FAST_Processing()
 
         # Set some processing parameters
         fp.OpenFAST_outfile_list        = outfiles
@@ -402,7 +402,7 @@ def gen_linear_model(wind_speeds, Tmax=600.):
     linear = LinearFAST(FAST_ver='OpenFAST', dev_branch=True);
 
     # fast info
-    linear.weis_dir                 = os.path.dirname( os.path.dirname ( os.path.dirname( __file__ ) ) ) + os.sep
+    linear.weis_dir                 = os.path.dirname( os.path.dirname (os.path.dirname(os.path.realpath(__file__)) ) ) + os.sep
     
     linear.FAST_InputFile           = 'IEA-15-240-RWT-UMaineSemi.fst'   # FAST input file (ext=.fst)
     linear.FAST_directory           = os.path.join(linear.weis_dir, 'examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi')   # Path to fst directory files
@@ -439,10 +439,10 @@ def gen_linear_model(wind_speeds, Tmax=600.):
 
 
     # run steady state sims
-    # linear.runFAST_steady()
+    linear.runFAST_steady()
 
     # process results 
-    # linear.postFAST_steady()
+    linear.postFAST_steady()
 
     # run linearizations
     linear.runFAST_linear()
