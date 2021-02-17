@@ -21,8 +21,8 @@ from ROSCO_toolbox import utilities as ROSCO_utilites
 from weis.aeroelasticse.Util import FileTools
 
 # Batch Analysis
-from pCrunch import pdTools
-from pCrunch import Processing, Analysis
+# from pCrunch import pdTools
+# from pCrunch import Processing, Analysis
 
 
 import numpy as np
@@ -161,7 +161,7 @@ class LinearFAST(runFAST_pywrapper_batch):
 
 
         # Initialize processing classes
-        fp = Processing.FAST_Processing()
+        # fp = Processing.FAST_Processing()
 
         # Set some processing parameters
         fp.OpenFAST_outfile_list        = outfiles
@@ -423,7 +423,7 @@ def gen_linear_model(wind_speeds, Tmax=600.):
     linear.v_rated          = 10.74         # needed as input from RotorSE or something, to determine TrimCase for linearization
     linear.GBRatio          = fastRead.fst_vt['ElastoDyn']['GBRatio']
     linear.WindSpeeds       = wind_speeds  #[8.,10.,12.,14.,24.]
-    linear.DOFs             = ['GenDOF'] #,'TwFADOF1','PtfmPDOF']  # enable with 
+    linear.DOFs             = ['GenDOF','TwFADOF1']#,'PtfmPDOF']  # enable with 
     linear.TMax             = Tmax   # should be 1000-2000 sec or more with hydrodynamic states
     linear.NLinTimes        = 12
 
@@ -435,14 +435,14 @@ def gen_linear_model(wind_speeds, Tmax=600.):
     linear.cores            = 8
 
     # overwrite steady & linearizations
-    linear.overwrite        = False
+    linear.overwrite        = True
 
 
     # run steady state sims
-    linear.runFAST_steady()
+    # linear.runFAST_steady()
 
     # process results 
-    linear.postFAST_steady()
+    # linear.postFAST_steady()
 
     # run linearizations
     linear.runFAST_linear()
