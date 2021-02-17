@@ -73,6 +73,8 @@ def run_wisdem(fname_wt_input, fname_modeling_options, fname_opt_options, overri
             wt_opt = myopt.set_design_variables(wt_opt, wt_init)
             wt_opt = myopt.set_constraints(wt_opt)
             wt_opt = myopt.set_recorders(wt_opt)
+            
+        wt_opt.driver.options['debug_print'] = ['desvars','ln_cons','nl_cons','objs','totals']
 
         # Setup openmdao problem
         wt_opt.setup()
