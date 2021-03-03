@@ -362,11 +362,15 @@ def compute_outputs(levelX_out):
     GenSpeed_Max = [lx_out['GenSpeed'].max() for lx_out in levelX_out]
     GenSpeed_Std = [lx_out['GenSpeed'].std() for lx_out in levelX_out]
 
+    # Platform pitch measures
+    PtfmPitch_Std = [lx_out['PtfmPitch'].std() for lx_out in levelX_out]
+
     # save outputs
     outputs = {}
     outputs['TwrBsMyt_DEL']     = TwrBsMyt_DEL[0]
     outputs['GenSpeed_Max']     = GenSpeed_Max[0]
     outputs['GenSpeed_Std']     = GenSpeed_Std[0]
+    outputs['PtfmPitch_Std']    = PtfmPitch_Std[0]
 
     return outputs
 
