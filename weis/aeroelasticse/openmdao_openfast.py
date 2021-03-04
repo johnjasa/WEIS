@@ -17,6 +17,9 @@ from weis.aeroelasticse.FAST_writer       import InputWriter_OpenFAST
 from weis.aeroelasticse.runFAST_pywrapper import runFAST_pywrapper, runFAST_pywrapper_batch
 from weis.aeroelasticse.FAST_post         import FAST_IO_timeseries
 from weis.aeroelasticse.CaseGen_IEC       import CaseGen_General, CaseGen_IEC
+from weis.aeroelasticse.FAST_reader import InputReader_Common, InputReader_OpenFAST, InputReader_FAST7
+import weis.control.LinearModel as lin_mod
+from weis.aeroelasticse.LinearFAST import LinearFAST
 from wisdem.floatingse.floating_frame import NULL, NNODES_MAX, NELEM_MAX
 
 from pCrunch import Analysis, pdTools, Processing
@@ -72,6 +75,7 @@ class FASTLoadCases(ExplicitComponent):
         n_pc         = int(rotorse_options['n_pc'])
 
         FASTpref = self.options['modeling_options']['openfast']
+        self.linearization = FASTpref['linearization']
         # self.FatigueFile   = self.options['modeling_options']['rotorse']['FatigueFile']
         
         # ElastoDyn Inputs
@@ -353,7 +357,8 @@ class FASTLoadCases(ExplicitComponent):
             # Run FAST with ElastoDyn
 
             FAST_Output, case_list, dlc_list  = self.run_FAST(inputs, discrete_inputs, fst_vt)
-            self.post_process(FAST_Output, case_list, dlc_list, inputs, discrete_inputs, outputs, discrete_outputs)
+            if not self.linearization:
+                self.post_process(FAST_Output, case_list, dlc_list, inputs, discrete_inputs, outputs, discrete_outputs)
 
             # list_cases, list_casenames, required_channels, case_keys = self.DLC_creation(inputs, discrete_inputs, fst_vt)
             # FAST_Output = self.run_FAST(fst_vt, list_cases, list_casenames, required_channels)
@@ -957,7 +962,13 @@ class FASTLoadCases(ExplicitComponent):
             channels[var] = True
 
         # FAST wrapper setup
-        fastBatch = runFAST_pywrapper_batch(FAST_ver=self.FAST_ver)
+        if self.linearization:
+            fastBatch = LinearFAST(FAST_ver='OpenFAST', dev_branch=True);
+            # fast info
+            fastBatch.weis_dir                 = os.path.dirname( os.path.dirname (os.path.dirname(os.path.realpath(__file__)) ) ) + os.sep
+            
+        else:
+            fastBatch = runFAST_pywrapper_batch(FAST_ver=self.FAST_ver)
         fastBatch.channels = channels
 
         if self.FASTpref['file_management']['FAST_exe'] != 'none':
@@ -976,13 +987,61 @@ class FASTLoadCases(ExplicitComponent):
         fastBatch.overwrite_outfiles = True  #<--- Debugging only, set to False to prevent OpenFAST from running if the .outb already exists
 
         # Run FAST
-        if self.mpi_run and self.options['opt_options']['driver']['optimization']['flag']:
-            FAST_Output = fastBatch.run_mpi(self.mpi_comm_map_down)
-        else:
-            if self.cores == 1:
-                FAST_Output = fastBatch.run_serial()
+        if not self.linearization:
+            if self.mpi_run and self.options['opt_options']['driver']['optimization']['flag']:
+                FAST_Output = fastBatch.run_mpi(self.mpi_comm_map_down)
             else:
-                FAST_Output = fastBatch.run_multi(self.cores)
+                if self.cores == 1:
+                    FAST_Output = fastBatch.run_serial()
+                else:
+                    FAST_Output = fastBatch.run_multi(self.cores)
+        else:
+            fastBatch.FAST_steadyDirectory     = os.path.join(self.FAST_runDirectory, 'iea_semi_steady')
+            fastBatch.FAST_linearDirectory     = os.path.join(self.FAST_runDirectory, 'iea_semi_lin')
+            fastBatch.dev_branch               = True
+            fastBatch.write_yaml               = True
+            
+            # TODO : update where all these values are coming from
+            # linearization setup
+            fastBatch.v_rated          = inputs['Vrated']         # needed as input from RotorSE or something, to determine TrimCase for linearization
+            fastBatch.GBRatio          = inputs['gearbox_ratio'][0]
+            fastBatch.WindSpeeds       = [10.]  #wind_speeds  #[8.,10.,12.,14.,24.]
+            fastBatch.DOFs             = ['GenDOF', 'TwFADOF1', 'PtfmPDOF']  # enable with 
+            fastBatch.TMax             = 800   # should be 1000-2000 sec or more with hydrodynamic states
+            fastBatch.NLinTimes        = 2
+
+            #if true, there will be a lot of hydronamic states, equal to num. states in ss_exct and ss_radiation models
+            fastBatch.HydroStates      = False   # taking out to speed up for test
+
+            # simulation setup
+            fastBatch.parallel         = False
+            fastBatch.cores            = 8
+
+            # overwrite steady & linearizations
+            fastBatch.overwrite        = True
+
+
+            # run steady state sims
+            print('ABOUT TO RUN STEADY !!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+            fastBatch.runFAST_steady()
+
+            # process results 
+            print('ABOUT TO POST STEADY !!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+            fastBatch.postFAST_steady()
+
+            # run linearizations
+            print('ABOUT TO LINEARIZE !!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+            fastBatch.runFAST_linear()
+            
+            weis_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+            lin_file_dir = os.path.join(weis_dir, "outputs/iea_semi_lin")
+            linTurb = lin_mod.LinearTurbineModel(lin_file_dir, reduceStates=False)
+            
+            FAST_Output = {}
+            FAST_Output['A'] = np.squeeze(linTurb.A_ops)
+            FAST_Output['B'] = np.squeeze(linTurb.B_ops)
+            FAST_Output['C'] = np.squeeze(linTurb.C_ops)
+            FAST_Output['D'] = np.squeeze(linTurb.D_ops)
 
         self.fst_vt = fst_vt
         self.of_inumber = self.of_inumber + 1

@@ -248,8 +248,6 @@ class LinearFAST(runFAST_pywrapper_batch):
             save_yaml(output_dir,'ss_ops.yaml',ssChanData)
 
 
-
-
     def runFAST_linear(self):
         """ 
         Example of running a batch of cases, in serial or in parallel
@@ -446,8 +444,8 @@ def gen_linear_model(wind_speeds, Tmax=600.):
 
     # run linearizations
     linear.runFAST_linear()
-
-
-
+    
+    
+    
 if __name__ == '__main__':
     gen_linear_model(np.arange(5,25,1,dtype=float).tolist())
