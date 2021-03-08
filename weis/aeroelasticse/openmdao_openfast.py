@@ -299,6 +299,7 @@ class FASTLoadCases(ExplicitComponent):
 
         self.add_output('V_out',       val=np.zeros(n_OF), units='m/s',  desc='wind vector')
         self.add_output('P_out',       val=np.zeros(n_OF), units='W',    desc='rotor electrical power')
+        self.add_output('P_aero_out',       val=np.zeros(n_OF), units='W',    desc='rotor aerodynamic power')
         self.add_output('Cp_out',      val=np.zeros(n_OF),               desc='rotor aero power coefficient')
         self.add_output('Omega_out',   val=np.zeros(n_OF), units='rpm',  desc='rotation speeds to run')
         self.add_output('pitch_out',   val=np.zeros(n_OF), units='deg',  desc='pitch angles to run')
@@ -1156,55 +1157,46 @@ class FASTLoadCases(ExplicitComponent):
 
         # get summary stats
         sum_stats, extreme_table = loads_analysis.summary_stats(FAST_Output)
-
-        # Setup paths for saving of output info
-        of_output_folder    =  os.path.join(self.options['opt_options']['general']['folder_output'],'of_outputs')
-        stats_output_folder =  os.path.join(of_output_folder, 'stats')
-        if not os.path.exists(stats_output_folder):
-            os.makedirs(of_output_folder)
-            os.makedirs(stats_output_folder)
-        # self.of_inumber = len(os.listdir(stats_output_folder))
-
-        # save summary stats
-        stats_fname = 'stats_i{}.yaml'.format(self.of_inumber)
-        Processing.save_yaml(stats_output_folder, stats_fname, sum_stats)
-
-
-        figs_fname = 'figures_i{}.pdf'.format(self.of_inumber)        
-        with PdfPages(os.path.join(of_output_folder,figs_fname)) as pdf:
-            for fast_out in FAST_Output:
-                plots2make = {'Baseline': ['Wind1VelX', 'GenPwr', 'RotSpeed', 'BldPitch1', 'GenTq'],
-                             'Blade': ['TipDxc1', 'RootMyb1']}
-                if self.n_tab > 1:
-                    plots2make['Baseline'].append('BLFLAP1')
-
-                numplots    = len(plots2make)
-                maxchannels = np.max([len(plots2make[key]) for key in plots2make.keys()])
-                fig = plt.figure(figsize=(8,6), constrained_layout=True)
-                gs_all = fig.add_gridspec(1, numplots)
-                for pnum, (gs, pname) in enumerate(zip(gs_all, plots2make.keys())):
-                    gs0 = gs.subgridspec(len(plots2make[pname]),1)
-                    for cid, channel in enumerate(plots2make[pname]):
-                        subplt = fig.add_subplot(gs0[cid])
-                        try:
-                            subplt.plot(fast_out['Time'], fast_out[channel])
-                            unit_idx = fast_out['meta']['channels'].index(channel)
-                            subplt.set_ylabel('{:^} \n ({:^})'.format(
-                                                channel,
-                                                fast_out['meta']['attribute_units'][unit_idx]))
-                            subplt.grid(True)
-                            subplt.set_xlabel('Time (s)')
-                        except:
-                            print('Cannot plot {}'.format(channel))
-                        if cid == 0:
-                            subplt.set_title(pname)
-                        if cid != len(plots2make[pname])-1:
-                            subplt.axes.get_xaxis().set_visible(False)
-
-                    plt.suptitle(fast_out['meta']['name'])
-                pdf.savefig(fig)
-                plt.close()
-
+        
+        # Determine maximum root moment
+        if self.n_blades == 2:
+            blade_root_flap_moment = max([max(sum_stats['RootMyb1']['max']), max(sum_stats['RootMyb2']['max'])])
+            blade_root_oop_moment  = max([max(sum_stats['RootMyc1']['max']), max(sum_stats['RootMyc2']['max'])])
+        else:
+            blade_root_flap_moment = max([max(sum_stats['RootMyb1']['max']), max(sum_stats['RootMyb2']['max']), max(sum_stats['RootMyb3']['max'])])
+            blade_root_oop_moment  = max([max(sum_stats['RootMyc1']['max']), max(sum_stats['RootMyc2']['max']), max(sum_stats['RootMyc3']['max'])])
+        outputs['max_RootMyb'] = blade_root_flap_moment
+        outputs['max_RootMyc'] = blade_root_oop_moment
+        
+        ## Post process aerodynamic data
+        # Angles of attack - max, std, mean
+        r = inputs['r']-inputs['Rhub']
+        blade1_chans_aoa = ["B1N1Alpha", "B1N2Alpha", "B1N3Alpha", "B1N4Alpha", "B1N5Alpha", "B1N6Alpha", "B1N7Alpha", "B1N8Alpha", "B1N9Alpha"]
+        blade2_chans_aoa = ["B2N1Alpha", "B2N2Alpha", "B2N3Alpha", "B2N4Alpha", "B2N5Alpha", "B2N6Alpha", "B2N7Alpha", "B2N8Alpha", "B2N9Alpha"]
+        aoa_max_B1  = [np.max(sum_stats[var]['max'])    for var in blade1_chans_aoa]
+        aoa_mean_B1 = [np.mean(sum_stats[var]['mean'])  for var in blade1_chans_aoa]
+        aoa_std_B1  = [np.mean(sum_stats[var]['std'])   for var in blade1_chans_aoa]
+        aoa_max_B2  = [np.max(sum_stats[var]['max'])    for var in blade2_chans_aoa]
+        aoa_mean_B2 = [np.mean(sum_stats[var]['mean'])  for var in blade2_chans_aoa]
+        aoa_std_B2  = [np.mean(sum_stats[var]['std'])   for var in blade2_chans_aoa]                
+        if self.n_blades == 2:
+            spline_aoa_max      = PchipInterpolator(self.R_out_AD, np.max([aoa_max_B1, aoa_max_B2], axis=0))
+            spline_aoa_std      = PchipInterpolator(self.R_out_AD, np.mean([aoa_std_B1, aoa_std_B2], axis=0))
+            spline_aoa_mean     = PchipInterpolator(self.R_out_AD, np.mean([aoa_mean_B1, aoa_mean_B2], axis=0))
+        elif self.n_blades == 3:
+            blade3_chans_aoa    = ["B3N1Alpha", "B3N2Alpha", "B3N3Alpha", "B3N4Alpha", "B3N5Alpha", "B3N6Alpha", "B3N7Alpha", "B3N8Alpha", "B3N9Alpha"]
+            aoa_max_B3          = [np.max(sum_stats[var]['max'])    for var in blade3_chans_aoa]
+            aoa_mean_B3         = [np.mean(sum_stats[var]['mean'])  for var in blade3_chans_aoa]
+            aoa_std_B3          = [np.mean(sum_stats[var]['std'])   for var in blade3_chans_aoa]
+            spline_aoa_max      = PchipInterpolator(self.R_out_AD, np.max([aoa_max_B1, aoa_max_B2, aoa_max_B3], axis=0))
+            spline_aoa_std      = PchipInterpolator(self.R_out_AD, np.mean([aoa_max_B1, aoa_std_B2, aoa_std_B3], axis=0))
+            spline_aoa_mean     = PchipInterpolator(self.R_out_AD, np.mean([aoa_mean_B1, aoa_mean_B2, aoa_mean_B3], axis=0))
+        else:
+            raise Exception('The calculations only support 2 or 3 bladed rotors')
+        outputs['max_aoa']  = spline_aoa_max(r)
+        outputs['std_aoa']  = spline_aoa_std(r)
+        outputs['mean_aoa'] = spline_aoa_mean(r)
+        
         ## Post process loads
         if self.FASTpref['dlc_settings']['run_IEC']:
             # TODO: support for BeamDyn
@@ -1236,7 +1228,6 @@ class FASTLoadCases(ExplicitComponent):
             spline_Fx = PchipInterpolator(self.R_out_ED, Fx)
             spline_Fy = PchipInterpolator(self.R_out_ED, Fy)
 
-            r = inputs['r']-inputs['Rhub']
             Fx_out = spline_Fx(r).flatten()
             Fy_out = spline_Fy(r).flatten()
             Fz_out = np.zeros_like(Fx_out)
@@ -1249,16 +1240,6 @@ class FASTLoadCases(ExplicitComponent):
             outputs['loads_pitch']   = extreme_table[tip_max_chan][np.argmax(sum_stats[tip_max_chan]['max'])]['BldPitch1']['val']
             outputs['loads_azimuth'] = extreme_table[tip_max_chan][np.argmax(sum_stats[tip_max_chan]['max'])]['Azimuth']['val']
 
-            # Determine maximum root moment
-            if self.n_blades == 2:
-                blade_root_flap_moment = max([max(sum_stats['RootMyb1']['max']), max(sum_stats['RootMyb2']['max'])])
-                blade_root_oop_moment  = max([max(sum_stats['RootMyc1']['max']), max(sum_stats['RootMyc2']['max'])])
-            else:
-                blade_root_flap_moment = max([max(sum_stats['RootMyb1']['max']), max(sum_stats['RootMyb2']['max']), max(sum_stats['RootMyb3']['max'])])
-                blade_root_oop_moment  = max([max(sum_stats['RootMyc1']['max']), max(sum_stats['RootMyc2']['max']), max(sum_stats['RootMyc3']['max'])])
-            outputs['max_RootMyb'] = blade_root_flap_moment
-            outputs['max_RootMyc'] = blade_root_oop_moment
-
             ## Get hub momements and forces in the non-rotating frame
             outputs['Fxyz'] = np.array([extreme_table['LSShftF'][np.argmax(sum_stats['LSShftF']['max'])]['RotThrust']['val'],
                                         extreme_table['LSShftF'][np.argmax(sum_stats['LSShftF']['max'])]['LSShftFys']['val'],
@@ -1266,34 +1247,6 @@ class FASTLoadCases(ExplicitComponent):
             outputs['Mxyz'] = np.array([extreme_table['LSShftM'][np.argmax(sum_stats['LSShftM']['max'])]['RotTorq']['val'],
                                         extreme_table['LSShftM'][np.argmax(sum_stats['LSShftM']['max'])]['LSSTipMys']['val'],
                                         extreme_table['LSShftM'][np.argmax(sum_stats['LSShftM']['max'])]['LSSTipMzs']['val']])*1.e3
-
-            ## Post process aerodynamic data
-            # Angles of attack - max, std, mean
-            blade1_chans_aoa = ["B1N1Alpha", "B1N2Alpha", "B1N3Alpha", "B1N4Alpha", "B1N5Alpha", "B1N6Alpha", "B1N7Alpha", "B1N8Alpha", "B1N9Alpha"]
-            blade2_chans_aoa = ["B2N1Alpha", "B2N2Alpha", "B2N3Alpha", "B2N4Alpha", "B2N5Alpha", "B2N6Alpha", "B2N7Alpha", "B2N8Alpha", "B2N9Alpha"]
-            aoa_max_B1  = [np.max(sum_stats[var]['max'])    for var in blade1_chans_aoa]
-            aoa_mean_B1 = [np.mean(sum_stats[var]['mean'])  for var in blade1_chans_aoa]
-            aoa_std_B1  = [np.mean(sum_stats[var]['std'])   for var in blade1_chans_aoa]
-            aoa_max_B2  = [np.max(sum_stats[var]['max'])    for var in blade2_chans_aoa]
-            aoa_mean_B2 = [np.mean(sum_stats[var]['mean'])  for var in blade2_chans_aoa]
-            aoa_std_B2  = [np.mean(sum_stats[var]['std'])   for var in blade2_chans_aoa]                
-            if self.n_blades == 2:
-                spline_aoa_max      = PchipInterpolator(self.R_out_AD, np.max([aoa_max_B1, aoa_max_B2], axis=0))
-                spline_aoa_std      = PchipInterpolator(self.R_out_AD, np.mean([aoa_std_B1, aoa_std_B2], axis=0))
-                spline_aoa_mean     = PchipInterpolator(self.R_out_AD, np.mean([aoa_mean_B1, aoa_mean_B2], axis=0))
-            elif self.n_blades == 3:
-                blade3_chans_aoa    = ["B3N1Alpha", "B3N2Alpha", "B3N3Alpha", "B3N4Alpha", "B3N5Alpha", "B3N6Alpha", "B3N7Alpha", "B3N8Alpha", "B3N9Alpha"]
-                aoa_max_B3          = [np.max(sum_stats[var]['max'])    for var in blade3_chans_aoa]
-                aoa_mean_B3         = [np.mean(sum_stats[var]['mean'])  for var in blade3_chans_aoa]
-                aoa_std_B3          = [np.mean(sum_stats[var]['std'])   for var in blade3_chans_aoa]
-                spline_aoa_max      = PchipInterpolator(self.R_out_AD, np.max([aoa_max_B1, aoa_max_B2, aoa_max_B3], axis=0))
-                spline_aoa_std      = PchipInterpolator(self.R_out_AD, np.mean([aoa_max_B1, aoa_std_B2, aoa_std_B3], axis=0))
-                spline_aoa_mean     = PchipInterpolator(self.R_out_AD, np.mean([aoa_mean_B1, aoa_mean_B2, aoa_mean_B3], axis=0))
-            else:
-                raise Exception('The calculations only support 2 or 3 bladed rotors')
-            outputs['max_aoa']  = spline_aoa_max(r)
-            outputs['std_aoa']  = spline_aoa_std(r)
-            outputs['mean_aoa'] = spline_aoa_mean(r)
 
         if self.FASTpref['dlc_settings']['run_blade_fatigue']:
 
@@ -1364,8 +1317,8 @@ class FASTLoadCases(ExplicitComponent):
                 if self.fst_vt['Fst']['CompServo'] == 1:
                     outputs['P_out']       = stats_pwrcrv['GenPwr']['mean'][0] * 1.e3
                 print('WARNING: OpenFAST is run at a single wind speed. AEP cannot be estimated.')
-
-            
+                
+            outputs['P_aero_out']  = outputs['P_out'] / (inputs['gearbox_efficiency'] * inputs['generator_efficiency'])
 
             outputs['V_out']       = np.unique(U)
 

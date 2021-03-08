@@ -504,11 +504,12 @@ class Power_Production(object):
         pwr_array = pwr_array.groupby('windspeeds').mean() 
         # find set of wind speeds
         ws_set = list(set(ws))
+        ws_set.sort()
         # wind probability
         wind_prob = self.prob_WindDist(ws_set, disttype='pdf')
         # Calculate AEP
         AEP = np.trapz(pwr_array.T *  wind_prob, ws_set) * 8760
-
+        
         # return power curves
         if len(pwr_curve_vars) > 0:
             performance_curves = {}
