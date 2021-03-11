@@ -395,33 +395,37 @@ def print_results_to_screen(list_of_sims, list_of_labels, values_to_print):
     print("+" + "-" * (len(case_headers) - 2) + "+")
 
     for key in values_to_print:
-        value_name = values_to_print[key][0]
-        units = values_to_print[key][1]
-        units_str = f" | {units}" + (15 - len(str(units))) * " " + "|"
+        try:
+            value_name = values_to_print[key][0]
+            units = values_to_print[key][1]
+            units_str = f" | {units}" + (15 - len(str(units))) * " " + "|"
 
-        value_sizer = list_of_sims[0].get_val(value_name, units)
-        size_of_variable = len(value_sizer)
+            value_sizer = list_of_sims[0].get_val(value_name, units)
+            size_of_variable = len(value_sizer)
 
-        for idx in range(size_of_variable):
+            for idx in range(size_of_variable):
 
-            if size_of_variable > 1:
-                augmented_key = f"{key}_{idx}"
-            else:
-                augmented_key = key
+                if size_of_variable > 1:
+                    augmented_key = f"{key}_{idx}"
+                else:
+                    augmented_key = key
 
-            name_str = f"| {augmented_key}" + (16 - len(augmented_key)) * " " + "| "
+                name_str = f"| {augmented_key}" + (16 - len(augmented_key)) * " " + "| "
 
-            list_of_values = []
-            for yaml_data in list_of_sims:
-                value = yaml_data.get_val(value_name, units).copy()
+                list_of_values = []
+                for yaml_data in list_of_sims:
+                    value = yaml_data.get_val(value_name, units).copy()
 
-                if len(values_to_print[key]) > 2:
-                    value *= values_to_print[key][2]
+                    if len(values_to_print[key]) > 2:
+                        value *= values_to_print[key][2]
 
-                list_of_values.append(f"{float(value[idx]):15.5f}")
+                    list_of_values.append(f"{float(value[idx]):15.5f}")
 
-            values_str = " | ".join(list_of_values)
-            print(name_str + values_str + units_str)
+                values_str = " | ".join(list_of_values)
+                print(name_str + values_str + units_str)
+        except KeyError as err:
+            print(err)
+            pass
 
     print("+" + "-" * (len(case_headers) - 2) + "+")
     print()
@@ -459,6 +463,7 @@ def run(list_of_sims, list_of_labels, modeling_options, analysis_options):
         "AEP": ["rp.AEP", "GW*h"],
         "Blade mass": ["re.precomp.blade_mass", "kg"],
         "LCOE": ["financese.lcoe", "USD/(MW*h)"],
+        "Cp_": ["ccblade.Cp", None],
         "Cp": ["rp.powercurve.Cp_aero", None],
         "Blade cost": ["re.precomp.total_blade_cost", "USD"],
         "Tip defl ratio": ["tcons.tip_deflection_ratio", None],
@@ -540,7 +545,7 @@ def main():
         froot = os.path.splitext(input_filename)[0]
 
         print()
-        if os.path.exists(froot + ".yaml") and os.path.exists(froot + ".pkl"):
+        if False:  #os.path.exists(froot + ".yaml") and os.path.exists(froot + ".pkl"):
             # Load in saved pickle dictionary if already ran WISDEM
             print(f"Loading WISDEM data for {input_filename}.")
             wt_opt, modeling_options, analysis_options = load_wisdem(froot)
