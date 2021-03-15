@@ -81,7 +81,7 @@ class SimpleTrustRegion(BaseMethod):
         self.expansion_ratio = expansion_ratio
         self.contraction_ratio = contraction_ratio
 
-    def find_next_point(self, num_basinhop_iterations):
+    def find_next_point(self, num_basinhop_iterations, opt_method):
         """
         Find the design point corresponding to the minimum value of the
         corrected low-fidelity model within the trust region.
@@ -110,15 +110,27 @@ class SimpleTrustRegion(BaseMethod):
         scaled_function = lambda x: self.objective_scaler * np.squeeze(
             self.approximation_functions[self.objective](x)
         )
+        
+        if 'COBYLA' in opt_method:
+            for factor in range(len(bounds)):
+                lower, upper = bounds[factor]
+                l = {'type': 'ineq',
+                     'fun': lambda x, lb=lower, i=factor: x[i] - lb}
+                u = {'type': 'ineq',
+                     'fun': lambda x, ub=upper, i=factor: ub - x[i]}
+                self.list_of_constraints.append(l)
+                self.list_of_constraints.append(u)
 
         if num_basinhop_iterations:
             minimizer_kwargs = {
-                "method": "SLSQP",
+                "method": opt_method,
                 "tol": 1e-10,
                 "bounds": bounds,
                 "constraints": self.list_of_constraints,
                 "options": {"disp": self.disp == 2, "maxiter": 20},
             }
+            if 'COBYLA' in opt_method:
+                minimizer_kwargs.pop('bounds')
             res = basinhopping(
                 scaled_function,
                 x0,
@@ -128,15 +140,25 @@ class SimpleTrustRegion(BaseMethod):
                 minimizer_kwargs=minimizer_kwargs,
             )
         else:
-            res = minimize(
-                scaled_function,
-                x0,
-                method="SLSQP",
-                tol=1e-10,
-                bounds=bounds,
-                constraints=self.list_of_constraints,
-                options={"disp": self.disp == 2, "maxiter": 20},
-            )
+            if 'COBYLA' in opt_method:
+                res = minimize(
+                    scaled_function,
+                    x0,
+                    method=opt_method,
+                    tol=1e-10,
+                    constraints=self.list_of_constraints,
+                    options={"disp": self.disp == 2, "maxiter": 20},
+                )
+            else:
+                res = minimize(
+                    scaled_function,
+                    x0,
+                    method=opt_method,
+                    tol=1e-10,
+                    bounds=bounds,
+                    constraints=self.list_of_constraints,
+                    options={"disp": self.disp == 2, "maxiter": 20},
+                )
         x_new = res.x
 
         tol = 1e-6
@@ -212,7 +234,7 @@ class SimpleTrustRegion(BaseMethod):
             print("Trust radius:", self.trust_radius)
             print("Best func value:", new_point_high)
 
-    def optimize(self, plot=False, num_iterations=100, num_basinhop_iterations=False, interp_method="smt"):
+    def optimize(self, plot=False, num_iterations=100, num_basinhop_iterations=False, interp_method="smt", opt_method="SLSQP"):
         """
         Actually perform the trust-region optimization.
 
@@ -232,7 +254,7 @@ class SimpleTrustRegion(BaseMethod):
 
         for i in range(num_iterations):
             self.process_constraints()
-            x_new, hits_boundary = self.find_next_point(num_basinhop_iterations)
+            x_new, hits_boundary = self.find_next_point(num_basinhop_iterations, opt_method)
 
             self.update_trust_region(x_new, hits_boundary)
 

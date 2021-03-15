@@ -26,6 +26,23 @@ class Test(unittest.TestCase):
         results = trust_region.optimize(plot=False)
     
         np.testing.assert_allclose(results["optimal_design"], [0.0, 0.333], atol=1e-3)
+        
+    def test_cobyla_optimization(self):
+        np.random.seed(13)
+    
+        bounds = {"x": np.array([[0.0, 1.0], [0.0, 1.0]])}
+        desvars = {"x": np.array([0.0, 0.25])}
+        model_low = simple_2D_low_model(desvars)
+        model_high = simple_2D_high_model(desvars)
+        trust_region = SimpleTrustRegion(
+            model_low, model_high, bounds, disp=False, num_initial_points=10
+        )
+    
+        trust_region.add_objective("y")
+    
+        results = trust_region.optimize(plot=False, opt_method='COBYLA')
+    
+        np.testing.assert_allclose(results["optimal_design"], [0.0, 0.333], atol=1e-3)
     
     def test_constrained_optimization(self):
         np.random.seed(13)
