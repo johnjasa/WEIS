@@ -55,7 +55,8 @@ def create_all_plots(
             color=colors[idx],
             label=label,
         )
-        s_opt_twist = np.linspace(0.0, 1.0, 8)
+        num_twist_dvs = analysis_options["design_variables"]["blade"]["aero_shape"]["twist"]["n_opt"]
+        s_opt_twist = np.linspace(0.0, 1.0, num_twist_dvs)
         twist_opt = np.interp(
             s_opt_twist,
             yaml_data["blade.outer_shape_bem.s"],
@@ -101,7 +102,8 @@ def create_all_plots(
             color=colors[idx],
             label=label,
         )
-        s_opt_chord = np.linspace(0.0, 1.0, 8)
+        num_chord_dvs = analysis_options["design_variables"]["blade"]["aero_shape"]["chord"]["n_opt"]
+        s_opt_chord = np.linspace(0.0, 1.0, num_chord_dvs)
         chord_opt = np.interp(
             s_opt_chord,
             yaml_data["blade.outer_shape_bem.s"],
@@ -155,7 +157,8 @@ def create_all_plots(
                     color=colors[idx],
                     label=label,
                 )
-
+                
+                num_sparcap_dvs = analysis_options["design_variables"]["blade"]["structure"]["spar_cap_ss"]["n_opt"]
                 s_opt_sc = np.linspace(0.0, 1.0, 8)
                 sc_opt = np.interp(
                     s_opt_sc,
