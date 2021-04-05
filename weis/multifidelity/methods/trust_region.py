@@ -384,34 +384,34 @@ class SimpleTrustRegion(BaseMethod):
 
             plt.plot(squeezed_x, np.squeeze(y_full), label="surrogate", c="tab:blue", lw=lw)
             
-            # x = self.design_vectors[-1, 0]
-            # y_plot = y_high[-1]
-            # y_diff = 0.5
-            # x_lb = max(x - self.trust_radius, self.bounds[0, 0])
-            # x_ub = min(x + self.trust_radius, self.bounds[0, 1])
-            # points = np.array(
-            #     [
-            #         [x_lb, y_plot],
-            #         [x_ub, y_plot],
-            #     ]
-            # )
-            # plt.plot(points[:, 0], points[:, 1], "-", color="gray", clip_on=False)
-            # 
-            # points = np.array(
-            #     [
-            #         [x_lb, y_plot - y_diff],
-            #         [x_lb, y_plot + y_diff],
-            #     ]
-            # )
-            # plt.plot(points[:, 0], points[:, 1], "-", color="gray", clip_on=False)
-            # 
-            # points = np.array(
-            #     [
-            #         [x_ub, y_plot - y_diff],
-            #         [x_ub, y_plot + y_diff],
-            #     ]
-            # )
-            # plt.plot(points[:, 0], points[:, 1], "-", color="gray", clip_on=False)
+            x = self.design_vectors[-1, 0]
+            y_plot = y_high[-1]
+            y_diff = 0.5
+            x_lb = max(x - self.trust_radius, self.bounds[0, 0])
+            x_ub = min(x + self.trust_radius, self.bounds[0, 1])
+            points = np.array(
+                [
+                    [x_lb, y_plot],
+                    [x_ub, y_plot],
+                ]
+            )
+            plt.plot(points[:, 0], points[:, 1], "-", color="gray", clip_on=False, lw=lw)
+            
+            points = np.array(
+                [
+                    [x_lb, y_plot - y_diff],
+                    [x_lb, y_plot + y_diff],
+                ]
+            )
+            plt.plot(points[:, 0], points[:, 1], "-", color="gray", clip_on=False, lw=lw)
+            
+            points = np.array(
+                [
+                    [x_ub, y_plot - y_diff],
+                    [x_ub, y_plot + y_diff],
+                ]
+            )
+            plt.plot(points[:, 0], points[:, 1], "-", color="gray", clip_on=False, lw=lw)
 
             plt.xlim(self.bounds[0])
             plt.ylim([-11, 10])
@@ -421,7 +421,7 @@ class SimpleTrustRegion(BaseMethod):
 
             ax = plt.gca()
             ax.text(s="Low-fidelity", x=0.1, y=2.5, c="tab:green", fontsize=fontsize)
-            ax.text(s="High-fidelity", x=0.2, y=-11., c="tab:orange", fontsize=fontsize)
+            ax.text(s="High-fidelity", x=0.2, y=-11.5, c="tab:orange", fontsize=fontsize)
             ax.text(
                 s="Corrected low-fidelity", x=0.45, y=-8.0, c="tab:blue", fontsize=fontsize
             )
