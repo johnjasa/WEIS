@@ -856,6 +856,9 @@ class FASTLoadCases(ExplicitComponent):
         if self.n_tab > 1:
             channels_out += ['BLFLAP1', 'BLFLAP2', 'BLFLAP3']
             
+        channels_out += ["B1N1Cl","B1N2Cl","B1N3Cl","B1N4Cl","B1N5Cl","B1N6Cl","B1N7Cl","B1N8Cl","B1N9Cl"]
+        channels_out += ["B1N1Cd","B1N2Cd","B1N3Cd","B1N4Cd","B1N5Cd","B1N6Cd","B1N7Cd","B1N8Cd","B1N9Cd"]
+            
         channels = {}
         for var in channels_out:
             channels[var] = True
