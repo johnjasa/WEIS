@@ -16,7 +16,7 @@ class BaseModel:
     using file IO.
     """
 
-    def __init__(self, desvars_init, warmstart_file=None):
+    def __init__(self, desvars_init, warmstart_file=None, calls_between_saving=1):
         """
         Initialize the model using an initial set of design variables.
         
@@ -35,6 +35,7 @@ class BaseModel:
         self.saved_outputs = []
 
         self.warmstart_file = warmstart_file
+        self.calls_between_saving = calls_between_saving
 
         # If warmstart_file is provided, read in saved results from before
         if warmstart_file is not None:
@@ -98,11 +99,12 @@ class BaseModel:
 
         # Only save to the pickle file if warmstart_file was provided
         if self.warmstart_file is not None:
-            saved_data = {}
-            saved_data["desvars"] = self.saved_desvars
-            saved_data["outputs"] = self.saved_outputs
-            with open(self.warmstart_file, "wb") as f:
-                dill.dump(saved_data, f)
+            if not len(self.saved_desvars) % self.calls_between_saving:
+                saved_data = {}
+                saved_data["desvars"] = self.saved_desvars
+                saved_data["outputs"] = self.saved_outputs
+                with open(self.warmstart_file, "wb") as f:
+                    dill.dump(saved_data, f)
 
     def load_results(self, flattened_desvars):
         """
