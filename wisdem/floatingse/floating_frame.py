@@ -1,5 +1,6 @@
 import numpy as np
 import openmdao.api as om
+
 import wisdem.commonse.utilities as util
 import wisdem.pyframe3dd.pyframe3dd as pyframe3dd
 import wisdem.commonse.utilization_dnvgl as util_dnvgl
@@ -11,9 +12,6 @@ NNODES_MAX = 1000
 NELEM_MAX = 1000
 RIGID = 1e30
 EPS = 1e-6
-
-# TODO:
-# - Added mass, hydro stiffness for tower sim
 
 
 class PlatformFrame(om.ExplicitComponent):
@@ -104,12 +102,11 @@ class PlatformFrame(om.ExplicitComponent):
         self.add_output("platform_variable_capacity", np.zeros(n_member), units="m**3")
 
         self.node_mem2glob = {}
-        # self.node_glob2mem = {}
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
-        # This shouldn't change during an optimization, so save some time?
-        if len(self.node_mem2glob) == 0:
-            self.set_connectivity(inputs, outputs)
+        # Seems like we have to run this each time as numbering can change during optimization
+        self.node_mem2glob = {}
+        self.set_connectivity(inputs, outputs)
 
         self.set_node_props(inputs, outputs)
         self.set_element_props(inputs, outputs, discrete_inputs, discrete_outputs)
@@ -944,7 +941,7 @@ class FrameAnalysis(om.ExplicitComponent):
 
             # trapezoidally distributed loads
             xx1 = xy1 = xz1 = np.zeros(ielem.size)
-            xx2 = xy2 = xz2 = L - 1e-6  # subtract small number b.c. of precision
+            xx2 = xy2 = xz2 = 0.99 * L  # multiply slightly less than unity b.c. of precision
             wx1 = inputs[f"{frame}_elem_Px1"][:nelem]
             wx2 = inputs[f"{frame}_elem_Px2"][:nelem]
             wy1 = inputs[f"{frame}_elem_Py1"][:nelem]
@@ -956,6 +953,7 @@ class FrameAnalysis(om.ExplicitComponent):
             # Add the load case and run
             myframe.addLoadCase(load_obj)
             # myframe.write(f"{frame}.3dd")
+            # myframe.draw()
             displacements, forces, reactions, internalForces, mass, modal = myframe.run()
 
             # natural frequncies
