@@ -1,9 +1,8 @@
 import os
 
-from scipy.interpolate import PchipInterpolator
-
 import numpy as np
 import openmdao.api as om
+from scipy.interpolate import PchipInterpolator
 
 
 class PoseOptimization(object):
@@ -1244,14 +1243,46 @@ class PoseOptimization(object):
         if float_constr["anchor_lateral"]["flag"]:
             wt_opt.model.add_constraint("floatingse.constr_anchor_lateral", lower=0.0)
 
-        if float_constr["stress"]["flag"]:
-            wt_opt.model.add_constraint("floatingse.constr_system_stress", upper=1.0)
+        constr_keys = [
+            "stress",
+            "shell_buckling",
+            "global_buckling",
+        ]
 
-        if float_constr["shell_buckling"]["flag"]:
-            wt_opt.model.add_constraint("floatingse.constr_system_shell_buckling", upper=1.0)
+        for key in constr_keys:
+            if float_constr[key]["flag"]:
 
-        if float_constr["global_buckling"]["flag"]:
-            wt_opt.model.add_constraint("floatingse.constr_system_global_buckling", upper=1.0)
+                if "index_start" in float_constr[key].keys():
+                    index_start = float_constr[key]["index_start"]
+                else:
+                    index_start = 0
+
+                if "index_end" in float_constr[key].keys():
+                    index_end = float_constr[key]["index_end"]
+                else:
+                    from wisdem.floatingse.floating_frame import NELEM_MAX
+
+                    index_end = NELEM_MAX
+
+                if float_constr[key]["aggregate"]:
+                    wt_opt.model.add_subsystem(
+                        f"ks_{key}",
+                        om.KSComp(
+                            width=index_end - index_start,
+                            upper=1.0,
+                            add_constraint=True,
+                            rho=float_constr[key]["aggregate_rho"],
+                        ),
+                    )
+                    wt_opt.model.connect(
+                        f"floatingse.constr_system_{key}",
+                        f"ks_{key}.g",
+                        src_indices=np.atleast_2d(np.arange(index_start, index_end)),
+                    )
+                else:
+                    wt_opt.model.add_constraint(
+                        f"floatingse.constr_system_{key}", upper=1.0, indices=np.arange(index_start, index_end)
+                    )
 
         return wt_opt
 
