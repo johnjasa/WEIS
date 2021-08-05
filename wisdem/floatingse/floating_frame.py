@@ -1,6 +1,5 @@
 import numpy as np
 import openmdao.api as om
-
 import wisdem.commonse.utilities as util
 import wisdem.pyframe3dd.pyframe3dd as pyframe3dd
 import wisdem.commonse.utilization_dnvgl as util_dnvgl
@@ -1121,6 +1120,9 @@ class FloatingFrame(om.Group):
             "E_mat",
             "G_mat",
             "sigma_y_mat",
+            "sigma_ult_mat",
+            "wohler_exp_mat",
+            "wohler_A_mat",
             "rho_mat",
             "rho_water",
             "unit_cost_mat",
