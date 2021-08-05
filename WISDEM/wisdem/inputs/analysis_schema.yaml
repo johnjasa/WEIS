@@ -909,36 +909,20 @@ properties:
                         type: object
                         default: {}
                         description: Enforce a maximum allowable von Mises stress relative to the material yield stress with safety factor of gamma_f * gamma_m * gamma_n
-                        properties: &props
+                        properties:
                             flag: *flag
-                            index_start:
-                                type: integer
-                                minimum: 0
-                                unit: none
-                                description: First index of the array of design variables/constraints that is optimized/constrained
-                            index_end:
-                                type: integer
-                                minimum: 0
-                                unit: none
-                                description: Last index of the array of design variables/constraints that is optimized/constrained
-                            aggregate:
-                                type: boolean
-                                default: False
-                                description: If True, aggregate constraint values using the KS constraint aggregation method
-                            aggregate_rho:
-                                type: number
-                                default: 50.
-                                description: Tightness parameter for constraint aggregation. The higher the rho, the less conservative the constraint aggregation is, thus it behaves more like max().
                     global_buckling: &globalb
                         type: object
                         default: {}
                         description: Enforce a global buckling limit using Eurocode checks with safety factor of gamma_f * gamma_b
-                        properties: *props
+                        properties:
+                            flag: *flag
                     shell_buckling: &shellb
                         type: object
                         default: {}
                         description: Enforce a shell buckling limit using Eurocode checks with safety factor of gamma_f * gamma_b
-                        properties: *props
+                        properties:
+                            flag: *flag
                     slope: &slope
                         type: object
                         default: {}
