@@ -3,6 +3,7 @@ import sys
 
 import numpy as np
 import openmdao.api as om
+
 from wisdem.commonse import fileIO
 from wisdem.commonse.mpi_tools import MPI
 from wisdem.glue_code.glue_code import WindPark
@@ -60,11 +61,14 @@ def run_wisdem(fname_wt_input, fname_modeling_options, fname_opt_options, overri
             # Parallel settings for OpenMDAO
             wt_opt = om.Problem(model=om.Group(num_par_fd=n_FD), comm=comm_i)
             wt_opt.model.add_subsystem(
-                "comp", WindPark(modeling_options=modeling_options, opt_options=opt_options), promotes=["*"]
+                "wind_park", WindPark(modeling_options=modeling_options, opt_options=opt_options), promotes=["*"]
             )
         else:
             # Sequential finite differencing
-            wt_opt = om.Problem(model=WindPark(modeling_options=modeling_options, opt_options=opt_options))
+            wt_opt = om.Problem()
+            wt_opt.model.add_subsystem(
+                "wind_park", WindPark(modeling_options=modeling_options, opt_options=opt_options), promotes=["*"]
+            )
 
         # If at least one of the design variables is active, setup an optimization
         if opt_options["opt_flag"] and not run_only:

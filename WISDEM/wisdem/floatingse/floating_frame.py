@@ -1,5 +1,6 @@
 import numpy as np
 import openmdao.api as om
+
 import wisdem.commonse.utilities as util
 import wisdem.pyframe3dd.pyframe3dd as pyframe3dd
 import wisdem.commonse.utilization_dnvgl as util_dnvgl
@@ -953,7 +954,10 @@ class FrameAnalysis(om.ExplicitComponent):
             myframe.addLoadCase(load_obj)
             # myframe.write(f"{frame}.3dd")
             # myframe.draw()
-            displacements, forces, reactions, internalForces, mass, modal = myframe.run()
+            try:
+                displacements, forces, reactions, internalForces, mass, modal = myframe.run()
+            except:
+                raise om.AnalysisError("Frame3DD in FloatingSE failed.")
 
             # natural frequncies
             if frame == "tower" and frame3dd_opt["modal"]:
