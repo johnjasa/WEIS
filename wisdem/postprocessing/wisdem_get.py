@@ -2,7 +2,7 @@ import numpy as np
 
 
 def is_floating(prob):
-    return prob.model.options["modeling_options"]["flags"]["floating"]
+    return prob.model.wind_park.options["modeling_options"]["flags"]["floating"]
 
 
 def get_tower_diameter(prob):
