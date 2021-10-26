@@ -9,7 +9,9 @@ from pCrunch.io import OpenFASTOutput
 from weis.aeroelasticse.CaseGen_General import case_naming
 
 
+
 def dtqp_wrapper(LinearTurbine,level2_disturbances,analysis_options,fst_vt,loads_analysis,magnitude_channels,run_dir,cores=1):
+
     ''' 
     Convert weis information to DTQP and vice versa
     Catch errors to ensure we are using DTQP in a way that it is able to be used
@@ -29,6 +31,7 @@ def dtqp_wrapper(LinearTurbine,level2_disturbances,analysis_options,fst_vt,loads
 
     ### Set up constraints
     dtqp_constraints = {}
+    
 
     # catch any other flags, maybe this is better handled elsehwere
     blade_const = analysis_options['constraints']['blade']
@@ -78,7 +81,7 @@ def dtqp_wrapper(LinearTurbine,level2_disturbances,analysis_options,fst_vt,loads
     ### Loop throught and call DTQP for each disturbance
     case_names = case_naming(len(level2_disturbances),'oloc')
 
-    plot = False
+    plot = True
 
     dtqp_input_list = []
     
@@ -122,9 +125,18 @@ def dtqp_wrapper(LinearTurbine,level2_disturbances,analysis_options,fst_vt,loads
         et[_name] = _et
         dl[_name] = _dl
         dam[_name] = _dam
+        #ct.append(OutData)
+        
+
+        #output.df.to_pickle(os.path.join(run_dir,case_names[i_oloc]+'.p'))
+
         # ct.append(OutData)
 
+
     summary_stats, extreme_table, DELs, Damage = loads_analysis.post_process(ss, et, dl, dam)
+    
+    # Calculate AEP
+    
 
     return summary_stats, extreme_table, DELs, Damage
 
@@ -146,8 +158,8 @@ def run_dtqp(dtqp_input):
     OutData['Time'] = T.flatten()
 
     output = OpenFASTOutput.from_dict(OutData, dtqp_input['case_name'],magnitude_channels=dtqp_input['magnitude_channels'])
-    output.df.to_pickle(os.path.join(dtqp_input['run_dir'],dtqp_input['case_name']+'.p'))
-
+    #output.df.to_pickle(os.path.join(dtqp_input['run_dir'],dtqp_input['case_name']+'.p'))
+    
     return output
 
 

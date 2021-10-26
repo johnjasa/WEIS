@@ -556,7 +556,7 @@ class PowerProduction:
         """
 
         assert len(stats) == len(windspeeds)
-
+        
         pwr = stats.loc[:, ("GenPwr", "mean")].to_frame()
 
         # Group and average powers by wind speeds
@@ -566,7 +566,7 @@ class PowerProduction:
         # Wind probability
         unique = list(np.unique(windspeeds))
         wind_prob = self.prob_WindDist(unique, disttype="pdf")
-
+        
         # Calculate AEP
         AEP = np.trapz(pwr.T * wind_prob, unique) * 8760
 
