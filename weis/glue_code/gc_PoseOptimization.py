@@ -244,22 +244,24 @@ class PoseOptimizationWEIS(PoseOptimization):
                 upper = control_constraints['Std_PtfmPitch']['max'])
 
         # OpenFAST failure
-        if self.opt['constraints']['openfast_failed']['flag']:
-            if self.modeling['Level3']['flag'] != True:
-                raise Exception('Please turn on the call to OpenFAST if you are trying to optimize with openfast_failed constraint.')
-            wt_opt.model.add_constraint('aeroelastic.openfast_failed',upper = 1.)
+        if 'openfast_failed' in self.opt['constraints']:
+            if self.opt['constraints']['openfast_failed']['flag']:
+                if self.modeling['Level3']['flag'] != True:
+                    raise Exception('Please turn on the call to OpenFAST if you are trying to optimize with openfast_failed constraint.')
+                wt_opt.model.add_constraint('aeroelastic.openfast_failed',upper = 1.)
 
         # Damage constraints
-        damage_constraints = self.opt['constraints']['damage']
-        if damage_constraints['tower_base']['flag']:
-            if self.modeling['Level3']['flag'] != True:
-                raise Exception('Please turn on the call to OpenFAST if you are trying to optimize with tower_base damage constraint.')
+        if 'damage' in self.opt['constraints']:
+            damage_constraints = self.opt['constraints']['damage']
+            if damage_constraints['tower_base']['flag']:
+                if self.modeling['Level3']['flag'] != True:
+                    raise Exception('Please turn on the call to OpenFAST if you are trying to optimize with tower_base damage constraint.')
 
-            tower_base_damage_max = damage_constraints['tower_base']['max']
-            if damage_constraints['tower_base']['log']:
-                tower_base_damage_max = np.log(tower_base_damage_max)
+                tower_base_damage_max = damage_constraints['tower_base']['max']
+                if damage_constraints['tower_base']['log']:
+                    tower_base_damage_max = np.log(tower_base_damage_max)
 
-            wt_opt.model.add_constraint('aeroelastic.damage_tower_base',upper = tower_base_damage_max)
+                wt_opt.model.add_constraint('aeroelastic.damage_tower_base',upper = tower_base_damage_max)
 
         return wt_opt
 
