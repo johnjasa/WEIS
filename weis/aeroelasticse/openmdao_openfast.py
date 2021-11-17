@@ -2323,9 +2323,10 @@ class FASTLoadCases(ExplicitComponent):
             outputs['damage_tower_base'] = np.sqrt( damage['TowerBaseAxial']**2 + damage['TowerBaseShear']**2 )
             outputs['damage_monopile_base'] = np.sqrt( damage['MonopileBaseAxial']**2 + damage['MonopileBaseShear']**2 )
 
-            # Log damages
-            if self.options['opt_options']['constraints']['damage']['tower_base']['log']:
-                outputs['damage_tower_base'] = np.log(outputs['damage_tower_base'])
+            # Perform logarithm on damages
+            if 'damage' in self.options['opt_options']['constraints']:
+                if self.options['opt_options']['constraints']['damage']['tower_base']['log']:
+                    outputs['damage_tower_base'] = np.log(outputs['damage_tower_base'])
 
         return outputs, discrete_outputs
 

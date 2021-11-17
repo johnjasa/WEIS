@@ -1,6 +1,6 @@
 general:
-    folder_output: outputs
-    fname_output: refturb_output
+    folder_output: outputs_more_DLC
+    fname_output: refturb_output_DLC
     
 design_variables:
   tower:
@@ -53,12 +53,12 @@ driver:
         form: forward       # Finite differencing mode, either forward or central
     design_of_experiments:
         flag: True            # Flag to enable design of experiments
-        run_parallel: False    # Flag to run using parallel processing
+        run_parallel: True    # Flag to run using parallel processing
         generator: Uniform    # Type of input generator. (Uniform)
-        num_samples: 100        # number of samples for (Uniform only)
+        num_samples: 2        # number of samples for (Uniform only)
         debug_print: True
     
 recorder:
     flag: True              # Flag to activate OpenMDAO recorder
     file_name: log_opt.sql  # Name of OpenMDAO recorder
-    includes: ['*tower*', '*TMD*', '*mass*']
+    includes: ['*tower*', '*TMD*', '*mass*', '*DEL*', '*damage*']
