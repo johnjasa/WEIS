@@ -1475,30 +1475,52 @@ class FASTLoadCases(ExplicitComponent):
 
                 if StC_i['StC_X_DOF'] and StC_i['StC_Y_DOF'] and not StC_i['StC_Z_DOF']:
                     StC_i['StC_DOF_MODE']   = 2
-            
-                # Set position
-                StC_i['StC_P_X']  = modopt['TMDs']['location'][i_TMD][0]
-                StC_i['StC_P_Y']  = modopt['TMDs']['location'][i_TMD][1]
-                StC_i['StC_P_Z']  = modopt['TMDs']['location'][i_TMD][2]
+
+                # Compute spring offset for each direction, initializing
+                g = modopt['Level3']['simulation']['Gravity']
+                spring_offset = np.zeros(3)
                 
                 # Set Mass, Stiffness, Damping only in DOFs enabled
                 if StC_i['StC_X_DOF'] and not StC_i['StC_DOF_MODE'] == 2:
                     StC_i['StC_X_M'] = inputs['TMD_mass'][i_TMD]
                     StC_i['StC_X_K'] = inputs['TMD_stiffness'][i_TMD]
                     StC_i['StC_X_C'] = inputs['TMD_damping'][i_TMD]
+                    spring_offset[0] = StC_i['StC_X_M'] * g / StC_i['StC_X_K']
                 elif StC_i['StC_Y_DOF'] and not StC_i['StC_DOF_MODE'] == 2:
                     StC_i['StC_Y_M'] = inputs['TMD_mass'][i_TMD]
                     StC_i['StC_Y_K'] = inputs['TMD_stiffness'][i_TMD]
                     StC_i['StC_Y_C'] = inputs['TMD_damping'][i_TMD]
+                    spring_offset[1] = StC_i['StC_Y_M'] * g / StC_i['StC_Y_K']
+
                 elif StC_i['StC_Z_DOF'] and not StC_i['StC_DOF_MODE'] == 2:
                     StC_i['StC_Z_M'] = inputs['TMD_mass'][i_TMD]
                     StC_i['StC_Z_K'] = inputs['TMD_stiffness'][i_TMD]
                     StC_i['StC_Z_C'] = inputs['TMD_damping'][i_TMD]
+                    spring_offset[2] = StC_i['StC_Z_M'] * g / StC_i['StC_Z_K']
+
                 elif StC_i['StC_DOF_MODE'] == 2:
                     StC_i['StC_XY_M']  = inputs['TMD_mass'][i_TMD]
                     # XY stiffnesses, damping equal for now
                     StC_i['StC_X_K'] = StC_i['StC_Y_K']  = inputs['TMD_stiffness'][i_TMD]
                     StC_i['StC_X_C'] = StC_i['StC_Y_C']  = inputs['TMD_damping'][i_TMD]
+                    spring_offset[0] = StC_i['StC_X_M'] * g / StC_i['StC_X_K']
+                    spring_offset[1] = StC_i['StC_Y_M'] * g / StC_i['StC_Y_K']
+
+                # Set position
+                if modopt['TMDs']['preload_spring'][i_TMD]:
+                    StC_i['StC_P_X']  = modopt['TMDs']['location'][i_TMD][0] + spring_offset[0]
+                    StC_i['StC_P_Y']  = modopt['TMDs']['location'][i_TMD][1] + spring_offset[1]
+                    StC_i['StC_P_Z']  = modopt['TMDs']['location'][i_TMD][2] + spring_offset[2]
+
+                    StC_i['StC_X_DSP']  = -spring_offset[0]
+                    StC_i['StC_Y_DSP']  = -spring_offset[1]
+                    StC_i['StC_Z_DSP']  = -spring_offset[2]
+
+                else:
+                    StC_i['StC_P_X']  = modopt['TMDs']['location'][i_TMD][0]
+                    StC_i['StC_P_Y']  = modopt['TMDs']['location'][i_TMD][1]
+                    StC_i['StC_P_Z']  = modopt['TMDs']['location'][i_TMD][2]
+                    
 
                 if modopt['TMDs']['component'][i_TMD] == 'tower':
                     fst_vt['ServoDyn']['NumTStC'] += 1
@@ -1647,6 +1669,7 @@ class FASTLoadCases(ExplicitComponent):
         WindFile_name = [''] * dlc_generator.n_cases
         rot_speed_initial = np.zeros(dlc_generator.n_cases)
         pitch_initial = np.zeros(dlc_generator.n_cases)
+        shutdown_start = np.full(dlc_generator.n_cases, fill_value = 9999)
         WindHd = np.zeros(dlc_generator.n_cases)
         WaveHs = np.zeros(dlc_generator.n_cases)
         WaveTp = np.zeros(dlc_generator.n_cases)
@@ -1719,8 +1742,9 @@ class FASTLoadCases(ExplicitComponent):
                     rot_speed_initial[i_case]   = fst_vt['DISCON_in']['PC_RefSpd'] * 30 / np.pi
                     pitch_initial[i_case]       = 15
             else:
-                rot_speed_initial[i_case] = 0.
-                pitch_initial[i_case] = 90.
+                rot_speed_initial[i_case]   = 0.
+                pitch_initial[i_case]       = 90.
+                shutdown_start[i_case]      = 0
             # Wave inputs to HydroDyn
             WindHd[i_case] = dlc_generator.cases[i_case].wind_heading
             WaveHs[i_case] = dlc_generator.cases[i_case].wave_height
@@ -1754,6 +1778,11 @@ class FASTLoadCases(ExplicitComponent):
         case_inputs[("HydroDyn","WaveDir")] = {'vals':WaveHd, 'group':1}
         case_inputs[("HydroDyn","WavePkShp")] = {'vals':WaveGamma, 'group':1}
         case_inputs[("HydroDyn","WaveSeed1")] = {'vals':WaveSeed1, 'group':1}
+        # Inptus to ServoDyn (parking)
+        case_inputs[("ServoDyn","TPitManS1")] = {'vals':shutdown_start, 'group':1}
+        case_inputs[("ServoDyn","TPitManS2")] = {'vals':shutdown_start, 'group':1}
+        case_inputs[("ServoDyn","TPitManS3")] = {'vals':shutdown_start, 'group':1}
+
 
         # Append current DLC to full list of cases
         case_list, case_name = CaseGen_General(case_inputs, self.FAST_runDirectory, self.FAST_InputFile)
