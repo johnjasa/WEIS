@@ -98,15 +98,7 @@ ROSCO:
     
 DLC_driver:
     DLCs:
-        - DLC: "1.1"
-          wind_speed: [12]
-          # wave_height: [6,7,8,9]
-          # wave_period: [11,12,13,14]
-          n_seeds: 1
-          analysis_time: 600.
-          transient_time: 120.
-          turbulent_wind:
-              HubHt: 140
-              GridHeight: 300
-              GridWidth: 300
-
+    - DLC: "1.6"
+      wind_speed: [11]
+      analysis_time: 600
+      transient_time: 120
