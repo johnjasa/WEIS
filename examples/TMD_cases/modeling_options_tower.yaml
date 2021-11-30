@@ -24,8 +24,8 @@ WISDEM:
         flag: True
     FloatingSE:
         flag: True
-    # BOS:
-    #     flag: True
+    BOS:
+        flag: True
 
 Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
     flag: True
@@ -102,3 +102,5 @@ DLC_driver:
       wind_speed: [11]
       analysis_time: 600
       transient_time: 120
+    - DLC: "1.1"
+      n_seeds: 6
