@@ -3,7 +3,7 @@ channels:
   - defaults
 
 dependencies:
-  - cmake
+  - cmake>=3.21.1
   - control
   - coveralls
   - cython
@@ -23,12 +23,10 @@ dependencies:
   - pyside2
   - pytest
   - pytest-cov
-  - python
   - python-benedict
   - pyyaml
   - ruamel_yaml
   - scipy
-  - seaborn
   - setuptools
   - smt
   - sortedcontainers
