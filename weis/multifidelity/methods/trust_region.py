@@ -80,6 +80,14 @@ class SimpleTrustRegion(BaseMethod):
         self.trust_radius = trust_radius
         self.expansion_ratio = expansion_ratio
         self.contraction_ratio = contraction_ratio
+        
+        self.x_inputs = []
+        self.mf_outputs = []
+        self.high_outputs = []
+        self.low_outputs = []
+        self.mf_grad = []
+        self.high_grad = []
+        self.low_grad = []
 
     def find_next_point(self, num_basinhop_iterations):
         """
@@ -149,7 +157,7 @@ class SimpleTrustRegion(BaseMethod):
 
         return x_new, hits_boundary
 
-    def update_trust_region(self, x_new, hits_boundary):
+    def update_trust_region(self, x_new, hits_boundary, detailed_save=True):
         """
         Either expand or contract the trust region radius based on the
         value of the high-fidelity function at the proposed design point.
@@ -180,6 +188,26 @@ class SimpleTrustRegion(BaseMethod):
         new_point_approx = self.objective_scaler * self.approximation_functions[
             self.objective
         ](x_new)
+        
+        if detailed_save:
+            perturb = 1.e-6
+            self.x_inputs.append(x_new)
+            self.mf_outputs.append(new_point_approx)
+            self.high_outputs.append(new_point_high)
+            self.low_outputs.append((
+                self.objective_scaler * self.model_low.run(x_new)[self.objective]
+            ))
+            
+            x_perturb = x_new + perturb
+            
+            low_grad = (self.model_low.run(x_perturb)[self.objective] - self.model_low.run(x_new)[self.objective]) / perturb
+            high_grad = (self.model_high.run(x_perturb)[self.objective] - self.model_high.run(x_new)[self.objective]) / perturb
+            mf_grad = (self.approximation_functions[self.objective](x_perturb) - self.approximation_functions[self.objective](x_new)) / perturb
+            
+            self.mf_grad.append(mf_grad)
+            self.high_grad.append(high_grad)
+            self.low_grad.append(low_grad)
+            
 
         actual_reduction = prev_point_high - new_point_high
         predicted_reduction = prev_point_approx - new_point_approx

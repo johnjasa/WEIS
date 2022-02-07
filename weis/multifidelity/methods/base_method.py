@@ -329,8 +329,16 @@ class BaseMethod:
         results["number_high_fidelity_calls"] = len(self.design_vectors[:, 0])
         results["design_vectors"] = self.design_vectors
         outputs = self.model_high.run_vec(np.atleast_2d(self.design_vectors[-1, :]))
-        results["outputs"] = outputs        
-
+        results["outputs"] = outputs
+        
+        results["x_inputs"] = np.squeeze(np.array(self.x_inputs))
+        results["mf_outputs"] = np.squeeze(np.array(self.mf_outputs))
+        results["high_outputs"] = np.squeeze(np.array(self.high_outputs))
+        results["low_outputs"] = np.squeeze(np.array(self.low_outputs))
+        results["mf_grad"] = np.squeeze(np.array(self.mf_grad))
+        results["high_grad"] = np.squeeze(np.array(self.high_grad))
+        results["low_grad"] = np.squeeze(np.array(self.low_grad))
+        
         if self.disp:
             print()
             print(results)
