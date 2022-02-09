@@ -377,6 +377,8 @@ class SimpleTrustRegion(BaseMethod):
 
             y_low = self.model_low.run_vec(self.design_vectors)[self.objective]
             y_high = self.model_high.run_vec(self.design_vectors)[self.objective]
+            
+            surr = y_full_low - y_full
 
             plt.figure()
 
@@ -389,6 +391,8 @@ class SimpleTrustRegion(BaseMethod):
             plt.scatter(self.design_vectors, y_high, c="tab:orange", s=s)
 
             plt.plot(squeezed_x, np.squeeze(y_full), label="surrogate", c="tab:blue", lw=lw)
+            
+            plt.plot(squeezed_x, np.squeeze(surr), label="surrogate-only", c="tab:purple", lw=lw)
             
             # x = self.design_vectors[-1, 0]
             # y_plot = y_high[-1]
@@ -426,10 +430,13 @@ class SimpleTrustRegion(BaseMethod):
             plt.ylabel("y", rotation=0)
 
             ax = plt.gca()
-            ax.text(s="Low-fidelity", x=0.1, y=2.5, c="tab:green", fontsize=fontsize)
+            ax.text(s="Low-fidelity", x=0.01, y=2.5, c="tab:green", fontsize=fontsize)
             ax.text(s="High-fidelity", x=0.2, y=-11., c="tab:orange", fontsize=fontsize)
             ax.text(
                 s="Corrected low-fidelity", x=0.45, y=-8.0, c="tab:blue", fontsize=fontsize
+            )
+            ax.text(
+                s="Corrective function", x=0.35, y=8.0, c="tab:purple", fontsize=fontsize
             )
 
             niceplots.adjust_spines(outward=True)
