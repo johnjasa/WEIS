@@ -430,7 +430,7 @@ class SimpleTrustRegion(BaseMethod):
             plt.ylabel("y", rotation=0)
 
             ax = plt.gca()
-            ax.text(s="Low-fidelity", x=0.01, y=2.5, c="tab:green", fontsize=fontsize)
+            ax.text(s="Low-fidelity", x=0.05, y=2.5, c="tab:green", fontsize=fontsize)
             ax.text(s="High-fidelity", x=0.2, y=-11., c="tab:orange", fontsize=fontsize)
             ax.text(
                 s="Corrected low-fidelity", x=0.45, y=-8.0, c="tab:blue", fontsize=fontsize
@@ -443,5 +443,7 @@ class SimpleTrustRegion(BaseMethod):
 
             plt.tight_layout()
 
-            plt.savefig(f"1d_{self.counter_plot}.png", dpi=300, bbox_inches="tight")
+            # plt.savefig(f"1d_{self.counter_plot}.png", dpi=300, bbox_inches="tight")
+            plt.savefig(f"1d_{self.counter_plot}.pdf", bbox_inches="tight")
+            
             self.counter_plot += 1
