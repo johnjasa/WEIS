@@ -236,6 +236,7 @@ class FASTLoadCases(ExplicitComponent):
                 n_member = modopt["floating"]["members"]["n_members"]
                 for k in range(n_member):
                     n_height_mem = modopt["floating"]["members"]["n_height"][k]
+                    n_ball = modopt["floating"]["members"]["n_ballasts"][k]
                     self.add_input(f"member{k}:joint1", np.zeros(3), units="m")
                     self.add_input(f"member{k}:joint2", np.zeros(3), units="m")
                     self.add_input(f"member{k}:s", np.zeros(n_height_mem))
@@ -243,6 +244,7 @@ class FASTLoadCases(ExplicitComponent):
                     self.add_input(f"member{k}:s_ghost2", 0.0)
                     self.add_input(f"member{k}:outer_diameter", np.zeros(n_height_mem), units="m")
                     self.add_input(f"member{k}:wall_thickness", np.zeros(n_height_mem-1), units="m")
+                    self.add_input(f"member{k}:ballast_volume", np.zeros(n_ball), units="m**3")
 
             # Turbine level inputs
             self.add_discrete_input('rotor_orientation',val='upwind', desc='Rotor orientation, either upwind or downwind.')
@@ -514,6 +516,17 @@ class FASTLoadCases(ExplicitComponent):
             self.lin_idx = 0
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
+        # We only want to have this special hacky logic when we have these specific design variables activated
+        float_opt = self.options['opt_options']["design_variables"]["floating"]
+        if float_opt["joints"]["flag"]:
+            if float_opt["members"]["flag"]:
+                for kgrp in float_opt["members"]["groups"]:
+                    if "ballast" in kgrp:
+                        DVs = [inputs['member1:joint1'][0], inputs['member1:ballast_volume'], inputs['member2:ballast_volume']]
+                        print("Here are the DVs:")
+                        print(DVs)
+                        break  # This is important to break out of the for loop
+                        
         modopt = self.options['modeling_options']
         #print(impl.world_comm().rank, 'Rotor_fast','start')
         sys.stdout.flush()

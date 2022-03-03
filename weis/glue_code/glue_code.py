@@ -448,6 +448,7 @@ class WindPark(om.Group):
                         idx = modeling_options["floating"]["members"]["name2idx"][kname]
                         #self.connect(f"floating.memgrp{idx}.outer_diameter", f"floatingse.member{k}.outer_diameter_in")
                         self.connect(f"floating.memgrp{idx}.s", f"aeroelastic.member{k}:s")
+                        self.connect(f"floating.memgrp{idx}.ballast_volume", f"aeroelastic.member{k}:ballast_volume")
                         self.connect(f"floatingse.member{k}.outer_diameter", f"aeroelastic.member{k}:outer_diameter")
                         self.connect(f"floatingse.member{k}.wall_thickness", f"aeroelastic.member{k}:wall_thickness")
 
