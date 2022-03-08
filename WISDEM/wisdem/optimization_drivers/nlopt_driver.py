@@ -385,10 +385,6 @@ class NLoptDriver(Driver):
                 opt_prob.set_population(int(self.options["maxiter"] / self.options["numgen"]))
                 
                 dx = opt_prob.get_initial_step(x_init)
-                if bounds is not None:
-                    lower_bound, upper_bound = zip(*bounds)
-                    lower = np.array([x if x is not None else -np.inf for x in lower_bound])
-                    upper = np.array([x if x is not None else np.inf for x in upper_bound])
                 dx *= self.opt_settings['simplex_scalar'] / 0.25  # 0.25 is the default non-dimensional dx step size
                 opt_prob.set_initial_step(dx)
                 
