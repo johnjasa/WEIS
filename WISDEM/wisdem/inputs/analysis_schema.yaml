@@ -1451,6 +1451,12 @@ properties:
                         default: 1e-3
                         minimum: 1e-10
                         maximum: 100.0
+                    simplex_scalar:
+                        type: number
+                        description: Multiplicative scalar on (upper_bound - lower_bound) for derivative-free methods in NLOpt such as COBYLA
+                        default: 0.25
+                        minimum: 1e-10
+                        maximum: 1.
                     form:
                         type: string
                         description: Finite difference calculation mode
