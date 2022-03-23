@@ -1234,9 +1234,15 @@ class WindTurbineOntologyPython(object):
                 yaml_out["members"][i]["outer_shape"]["outer_diameter"]["grid"] = wt_opt[
                     f"floating.memgrp{idx}.s_in"
                 ].tolist()
-                yaml_out["members"][i]["outer_shape"]["outer_diameter"]["values"] = wt_opt[
-                    f"floating.memgrp{idx}.outer_diameter_in"
-                ].tolist()
+                
+                if len(wt_opt[f"floating.memgrp{idx}.outer_diameter_in"]) == 1:
+                    tmp = np.array(yaml_out["members"][i]["outer_shape"]["outer_diameter"]["values"])
+                    tmp[:] = wt_opt[f"floating.memgrp{idx}.outer_diameter_in"]
+                    yaml_out["members"][i]["outer_shape"]["outer_diameter"]["values"] = tmp.tolist()
+                else:
+                    yaml_out["members"][i]["outer_shape"]["outer_diameter"]["values"] = wt_opt[
+                        f"floating.memgrp{idx}.outer_diameter_in"
+                    ].tolist()
 
                 istruct = yaml_out["members"][i]["internal_structure"]
 
