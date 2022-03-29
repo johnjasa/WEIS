@@ -3099,7 +3099,7 @@ class ComputeHighLevelBladeProperties(om.ExplicitComponent):
         outputs["prebendTip"] = outputs["blade_ref_axis"][-1, 0]
         outputs["presweep"] = outputs["blade_ref_axis"][:, 1]
         outputs["presweepTip"] = outputs["blade_ref_axis"][-1, 1]
-
+        
 
 class ComputeHighLevelTowerProperties(om.ExplicitComponent):
     # Openmdao component that computes tower quantities, such as the hub height, and the blade-tower clearance

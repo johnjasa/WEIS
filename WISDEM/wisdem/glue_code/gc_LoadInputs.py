@@ -166,9 +166,10 @@ class WindTurbineOntologyPython(object):
 
         # Blade
         if self.modeling_options["flags"]["blade"]:
-            self.modeling_options["WISDEM"]["RotorSE"]["nd_span"] = np.linspace(
-                0.0, 1.0, self.modeling_options["WISDEM"]["RotorSE"]["n_span"]
-            )  # Equally spaced non-dimensional spanwise grid
+            # self.modeling_options["WISDEM"]["RotorSE"]["nd_span"] = np.linspace(
+            #     0.0, 1.0, self.modeling_options["WISDEM"]["RotorSE"]["n_span"]
+            # )  # Equally spaced non-dimensional spanwise grid
+            self.modeling_options["WISDEM"]["RotorSE"]["nd_span"] = np.array(self.wt_init["components"]["blade"]["outer_shape_bem"]["reference_axis"]["z"]["values"]) / self.wt_init["components"]["blade"]["outer_shape_bem"]["reference_axis"]["z"]["values"][-1]
             self.modeling_options["WISDEM"]["RotorSE"]["n_af_span"] = len(
                 self.wt_init["components"]["blade"]["outer_shape_bem"]["airfoil_position"]["labels"]
             )  # This is the number of airfoils defined along blade span and it is often different than n_af, which is the number of airfoils defined in the airfoil database
